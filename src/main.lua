@@ -1,3 +1,4 @@
+-- Dependencies
 local utils = require 'utils'
 local app = require 'app'
 
@@ -5,7 +6,7 @@ local tween = require 'vendor/tween'
 local Gamestate = require 'vendor/gamestate'
 local sound = require 'vendor/TEsound'
 local timer = require 'vendor/timer'
-local cli = require 'vendor/cliargs'
+local cli = require 'core/cli'
 
 local debugger = require 'debugger'
 local camera = require 'camera'
@@ -19,45 +20,19 @@ local player = require 'player'
 local Dialog = require 'dialog'
 local Prompt = require 'prompt'
 
+-- State
 local testing = false
 local paused = false
 
+-- Load
 function love.load(arg)
-  -- Check if this is the correct version of LOVE
   local version = love.getVersion()
 
   if version < 11 then
     error("Love 11 or later is required")
   end
 
-  local state, door, position = 'update', nil, nil
-
-  -- set settings
-  local options = require 'options'
-  options:init()
-
-  cli:add_option("--console", "Displays print info")
-  cli:add_option("--fused", "Passed in when the app is running in fused mode")
-  cli:add_option("--reset-saves", "Resets all the saves")
-  cli:add_option("-b, --bbox", "Draw all bounding boxes ( enables memory debugger )")
-  cli:add_option("-c, --character=NAME", "The character to use in the game")
-  cli:add_option("-d, --debug", "Enable Memory Debugger")
-  cli:add_option("-l, --level=NAME", "The level to display")
-  cli:add_option("-m, --money=COINS", "Give your character coins ( requires level flag )")
-  cli:add_option("-n, --locale=LOCALE", "Local, defaults to en-US")
-  cli:add_option("-o, --costume=NAME", "The costume to use in the game")
-  cli:add_option("-p, --position=X,Y", "The positions to jump to ( requires level )")
-  cli:add_option("-r, --door=NAME", "The door to jump to ( requires level )")
-  cli:add_option("-t, --test", "Run all the unit tests")
-  cli:add_option("-w, --wait", "Wait for three seconds")
-  cli:add_option("-v, --vol-mute=CHANNEL", "Disable sound: all, music, sfx")
-  cli:add_option("-x, --cheat=ALL/CHEAT1,CHEAT2", "Enable certain cheats ( some require level to function, else will crash with collider is nil )")
-
-  local args = cli:parse(arg)
-
-  if not args then
-    error("Could not parse command line arguments")
-  end
+  local args = cli.initialize(arg)
 
   if args["test"] then
     local lovetest = require 'test/lovetest'
@@ -67,26 +42,10 @@ function love.load(arg)
   end
 
   if args["wait"] then
-    -- Wait to for other game to quit
+    -- wait to for other game to quit
     love.timer.sleep(3)
   end
-
-  if args["level"] ~= "" then
-    state = args["level"]
-    -- If we're jumping to a level, then we need to be 
-    -- sure to set the Gamestate.home variable
-    Gamestate.home = "update"
-  end
-
-  if args["door"] ~= "" then
-    door = args["door"]
-  end
-
-  if args["position"] ~= "" then
-    position = args["position"]
-  end
   
-
   -- Choose character and costume
   local char = "abed"
   local costume = "base"
@@ -121,6 +80,10 @@ function love.load(arg)
     debugger.set(true, true)
   end
   
+  -- set settings
+  local options = require 'options'
+  options:init()
+
   if args["reset-saves"] then
     options:reset_saves()
   end
@@ -154,6 +117,23 @@ function love.load(arg)
 
   love.graphics.setDefaultFilter('nearest', 'nearest')
 
+  local state, door, position = 'update', nil, nil
+
+  if args["level"] ~= "" then
+    state = args["level"]
+    -- if we're jumping to a level, then we need to be 
+    -- sure to set the gamestate.home variable
+    gamestate.home = "update"
+  end
+
+  if args["door"] ~= "" then
+    door = args["door"]
+  end
+
+  if args["position"] ~= "" then
+    position = args["position"]
+  end
+
   Gamestate.switch(state,door,position)
 
   if argcheats then
@@ -164,6 +144,7 @@ function love.load(arg)
 
 end
 
+-- Update
 function love.update(dt)
   if paused or testing then return end
   if debugger.on then debugger:update(dt) end
@@ -185,6 +166,7 @@ function love.update(dt)
   end
 end
 
+-- buttons
 function buttonreleased(key)
   if testing then return end
   local action = controls:getAction(key)
@@ -260,6 +242,7 @@ function love.joystickaxis(joystick, axis, value)
   if axisDir2 > 0 then buttonpressed('dpdown') end
 end
 
+-- Draw
 function love.draw()
   if testing then return end
 
