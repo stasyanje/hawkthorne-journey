@@ -12,17 +12,12 @@ function screen:enter()
   self.progress = 0
   self.time = 0
   self.logo = love.graphics.newImage('images/menu/splash.png')
-  self.bg = sound.playMusic("ending")
+  -- self.bg = sound.playMusic("ending")
 end
 
 function screen:update(dt)
   self.time = self.time + dt
-
-  if self.time < 2.5 then
-    return
-  end
-
-  Gamestate.switch('welcome')
+  Gamestate.switch('core/scenes/intro_scene')
 end
 
 function screen:leave()
