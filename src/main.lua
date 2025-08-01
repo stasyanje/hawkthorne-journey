@@ -1,6 +1,7 @@
 -- Dependencies
 local Gamestate = require 'vendor/gamestate'
 local cli = require 'system/cli'
+local VideoSettings = require 'system/video_settings'
 
 local window = require 'ui/window'
 
@@ -24,7 +25,17 @@ function love.update(dt)
   -- Max dt of 0.1 seconds (10 FPS minimum) to prevent huge jumps
   dt = math.min(0.1, dt)
 
-  Gamestate.update(dt)
+  -- Update video settings and check if frame is ready
+  VideoSettings:update(dt)
+  
+  local video_system = VideoSettings:getVideoSystem()
+  local current_frame = video_system.frame
+  
+  -- Only update gamestate when a new frame is ready
+  if current_frame ~= (love._last_frame or 0) then
+    love._last_frame = current_frame
+    Gamestate.update(dt)
+  end
 end
 
 -- buttons
@@ -64,7 +75,13 @@ end
 
 -- Draw
 function love.draw()
-  Gamestate.draw()
+  -- Draw video settings (frame pacer + FPS slider)
+  VideoSettings:draw()
+  
+  -- Only draw scene when frame is ready (same frame limiting as update)
+  if love._last_frame and love._last_frame > 0 then
+    Gamestate.draw()
+  end
 end
 
 -- Override the default screenshot functionality so we can disable the fps before taking it

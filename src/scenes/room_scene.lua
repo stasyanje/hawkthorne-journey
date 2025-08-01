@@ -2,7 +2,6 @@ local Gamestate = require 'vendor/gamestate'
 local window = require 'ui/window'
 local Circle = require 'system/drawables/circle'
 local Rect = require 'system/drawables/rect'
-local VideoSettings = require 'system/video_settings'
 
 local room = Gamestate.new()
 
@@ -94,9 +93,6 @@ function room:leave()
 end
 
 function room:update(dt)
-    -- Update shared video settings
-    VideoSettings:update(dt)
-    
     -- Handle player movement
     self:updatePlayerMovement(dt)
     
@@ -185,8 +181,6 @@ function room:triggerDoor(door_name)
 end
 
 function room:draw()
-    VideoSettings:draw()
-    
     love.graphics.push()
     love.graphics.setBackgroundColor(0.1, 0.1, 0.2, 1)
     

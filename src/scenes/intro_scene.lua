@@ -3,7 +3,6 @@ local window = require 'ui/window'
 local Circle = require 'system/drawables/circle'
 local Rect = require 'system/drawables/rect'
 local Collider = require 'system/collider'
-local VideoSettings = require 'system/video_settings'
 
 local intro = Gamestate.new()
 
@@ -30,28 +29,14 @@ function intro:leave()
 end
 
 function intro:update(dt)
-    -- Update shared video settings
-    VideoSettings:update(dt)
-    
-    local frame = VideoSettings:getVideoSystem().frame
-
-    if frame == self.frame then
-        return
-    end
-
-    self.frame = frame
     self:move()
     self.collider:update(dt)
 end
 
 function intro:draw()
-    VideoSettings:draw()
-
     love.graphics.push()
     love.graphics.setBackgroundColor(0, 0, 0, 1)
     love.graphics.setColor(1, 1, 1, 1)
-
-    -- love.graphics
 
     love.graphics.setFont(love.graphics.newFont(8))
 
@@ -68,9 +53,9 @@ function intro:draw()
 end
 
 function intro:move()
-    -- moving circle
+    -- moving circle (simple time-based animation)
     self.moving_circle.y = 0.5 * window.height
-    self.moving_circle.x = window.width * math.abs(math.sin(VideoSettings:getVideoSystem():totalTime()) * 0.5 + 0.5)
+    self.moving_circle.x = window.width * math.abs(math.sin(love.timer.getTime()) * 0.5 + 0.5)
 
     -- collision scale
     local collision = self.collider:collideCircles(self.moving_circle, self.static_circle)
@@ -120,18 +105,6 @@ end
 function intro:keypressed(button, player)
     if button == 'START' then
         Gamestate.stack(require('core.scenes.pause_scene'))
-        return true
-    end
-
-    if button == 'd' then
-        intro.player_circle.x = intro.player_circle.x + 10
-        VideoSettings:setTargetFPS(30)  -- Set to 30 FPS
-        return true
-    end
-
-    if button == 'a' then
-        intro.player_circle.x = intro.player_circle.x - 10
-        VideoSettings:setTargetFPS(120) -- Set to 120 FPS
         return true
     end
     
