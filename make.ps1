@@ -76,22 +76,6 @@ if($check -eq $false){
   $destination.Copyhere($zip_file.items())
 }
 
-$fileEntries = [IO.Directory]::GetFiles((Get-Location).Path + "\src\maps");
-foreach($fileName in $fileEntries)
-{
-  $lua = $filename.split(".")[0] + ".lua"
-  $exists = Test-Path $lua
-  $older = $true
-
-  if($exists -eq $true) {
-    $older = (Get-Item $filename).LastWriteTime -gt (Get-Item $lua).LastWriteTime
-  }
-
-  if($older -eq $true) {
-    .\bin\tmx2lua.exe $filename $lua
-  }
-}
-
 if($args[0] -eq "run"){
   Write-Host "Running Journey to the Center of Hawkthorne..."
   if($args.Length -ne 1){

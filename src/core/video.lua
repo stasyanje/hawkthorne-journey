@@ -1,3 +1,5 @@
+local FramePacer = require "src.core.frame_pacer"
+
 --- @module src.video
 local video = {}
 
@@ -10,21 +12,22 @@ function video.new()
         total_time = 0,
         frame = 0,
         current_frame_delta = 0,
-        desired_frame_time = 1000.0 / 60 / 1000
+        desired_frame_time = 1000.0 / 60 / 1000,
+        frame_pacer = FramePacer.new(Rect:new(0, 0, 80, 80))
     }, { __index = Video })
 
     return self
 end
 
-function Video:fps()
-    return 1 / math.max(self.prev_dt, self.desired_frame_time)
+function Video:totalTime()
+    return self.total_time
 end
 
 function Video:round(x)
     return x >= 0 and math.floor(x + 0.5) or math.ceil(x - 0.5)
 end
 
-function Video:currentFrame(dt)
+function Video:update(dt)
     self.prev_dt = dt
     self.total_time = self.total_time + dt
 
@@ -33,6 +36,8 @@ function Video:currentFrame(dt)
         return self.frame
     end
 
+    self.frame_pacer:update(self.current_frame_delta)
+
     self.current_frame_delta = 0
     self.frame = self.total_time / self.desired_frame_time
 
@@ -40,13 +45,8 @@ function Video:currentFrame(dt)
 end
 
 function Video:drawMetrics()
-    local width = 170
-    local height = 100
-
-    love.graphics.print(1 / math.max(self.prev_dt, self.desired_frame_time))
-
-    love.graphics.setColor(1, 0, 0, 0.3)
-    love.graphics.rectangle('fill', 0, 0, width, height)
+    self.frame_pacer:draw()
+    love.graphics.print(math.floor(1 / math.max(self.prev_dt, self.desired_frame_time)))
 end
 
 return video

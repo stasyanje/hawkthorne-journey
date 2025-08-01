@@ -24,7 +24,7 @@ function intro:init()
 end
 
 function intro:enter()
-  print('BINGO intro:enter')
+  print('BINGO intro:enter ' .. love.graphics.getHeight())
 end
 
 function intro:leave()
@@ -32,7 +32,7 @@ function intro:leave()
 end
 
 function intro:update(dt)
-  local frame = self.video:currentFrame(dt)
+  local frame = self.video:update(dt)
 
   if frame == self.frame then
     return
@@ -64,9 +64,12 @@ end
 
 function intro:move()
   -- moving circle
-  self.moving_circle.y = window.height * 0.5
-  self.moving_circle.x = 0.5 + 0.5
-  self.moving_circle.x = self.moving_circle.x * window.width
+  self.moving_circle.y = 0.5 * window.height
+  self.moving_circle.x = window.width * math.abs(
+    math.sin(
+      self.video:totalTime()
+    ) * 0.5 + 0.5
+  )
 
   -- collision scale
   local collision = self.collider:collideCircles(self.moving_circle, self.static_circle)

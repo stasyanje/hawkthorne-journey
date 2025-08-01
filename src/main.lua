@@ -1,5 +1,4 @@
 -- Dependencies
-local utils = require 'utils'
 local app = require 'app'
 
 local tween = require 'vendor/tween'
@@ -13,12 +12,7 @@ local camera = require 'camera'
 local fonts = require 'fonts'
 local window = require 'window'
 local controls = require('inputcontroller').get()
-local hud = require 'hud'
-local character = require 'character'
 local cheat = require 'cheat'
-local player = require 'player'
-local Dialog = require 'dialog'
-local Prompt = require 'prompt'
 
 -- State
 local testing = false
@@ -45,31 +39,13 @@ function love.load(arg)
     -- wait to for other game to quit
     love.timer.sleep(3)
   end
-  
-  -- Choose character and costume
-  local char = "abed"
-  local costume = "base"
-
-  if args["character"] ~= "" then
-    char = args["c"]
-  end
-
-  if args["costume"] ~= "" then
-    costume = args["o"]
-  end
-
-  character.pick(char, costume)
 
   if args["vol-mute"] == 'all' then
     sound.disabled = true
   elseif args["vol-mute"] == 'music' then
-    sound.volume('music',0)
+    sound.volume('music', 0)
   elseif args["vol-mute"] == 'sfx' then
-    sound.volume('sfx',0)
-  end
-
-  if args["money"] ~= "" then
-    player.startingMoney = tonumber(args["money"])
+    sound.volume('sfx', 0)
   end
 
   if args["d"] then
@@ -79,69 +55,42 @@ function love.load(arg)
   if args["b"] then
     debugger.set(true, true)
   end
-  
-  -- set settings
-  local options = require 'options'
-  options:init()
-
-  if args["reset-saves"] then
-    options:reset_saves()
-  end
 
   if args["locale"] ~= "" then
     app.i18n:setLocale(args.locale)
   end
 
   local argcheats = false
-  local cheats = { }
+  local cheats = {}
   if args["cheat"] ~= "" then
     argcheats = true
 
-    if string.find(args["cheat"],",") then
-      local from  = 1
-      local delim_from, delim_to = string.find( args["cheat"], ",", from  )
+    if string.find(args["cheat"], ",") then
+      local from                 = 1
+      local delim_from, delim_to = string.find(args["cheat"], ",", from)
       while delim_from do
-        table.insert( cheats, string.sub( args["cheat"], from , delim_from-1 ) )
-        from  = delim_to + 1
-        delim_from, delim_to = string.find( args["cheat"], ",", from  )
+        table.insert(cheats, string.sub(args["cheat"], from, delim_from - 1))
+        from                 = delim_to + 1
+        delim_from, delim_to = string.find(args["cheat"], ",", from)
       end
-      table.insert( cheats, string.sub( args["cheat"], from  ) )
+      table.insert(cheats, string.sub(args["cheat"], from))
     else
       if args["cheat"] == "all" then
-        cheats = {'jump_high','super_speed','god','slide_attack','give_money','max_health','give_gcc_key','give_weapons', 'give_materials','give_potions','give_scrolls','give_taco_meat','unlock_levels','give_master_key', 'give_armor', 'give_recipes'}
+        cheats = { 'jump_high', 'super_speed', 'god', 'slide_attack' }
       else
-        cheats = {args["cheat"]}
+        cheats = { args["cheat"] }
       end
     end
   end
 
   love.graphics.setDefaultFilter('nearest', 'nearest')
-
-  local state, door, position = 'update', nil, nil
-
-  if args["level"] ~= "" then
-    state = args["level"]
-    -- if we're jumping to a level, then we need to be 
-    -- sure to set the gamestate.home variable
-    gamestate.home = "update"
-  end
-
-  if args["door"] ~= "" then
-    door = args["door"]
-  end
-
-  if args["position"] ~= "" then
-    position = args["position"]
-  end
-
-  Gamestate.switch(state,door,position)
+  Gamestate.switch('update', door, position)
 
   if argcheats then
-    for k,arg in ipairs(cheats) do
+    for k, arg in ipairs(cheats) do
       cheat:on(arg)
     end
   end
-
 end
 
 -- Update
@@ -149,12 +98,6 @@ function love.update(dt)
   if paused or testing then return end
   if debugger.on then debugger:update(dt) end
   dt = math.min(0.033333333, dt)
-  if Prompt.currentPrompt then
-    Prompt.currentPrompt:update(dt)
-  end
-  if Dialog.currentDialog then
-    Dialog.currentDialog:update(dt)
-  end
 
   Gamestate.update(dt)
   tween.update(dt > 0 and dt or 0.001)
@@ -173,30 +116,23 @@ function buttonreleased(key)
   if action then Gamestate.keyreleased(action) end
 
   if not action then return end
-
-  if Prompt.currentPrompt or Dialog.currentDialog then
-    --bypass
-  else
-    Gamestate.keyreleased(action)
-  end
+  Gamestate.keyreleased(action)
 end
 
 function buttonpressed(key)
   if testing then return end
-  if controls:isRemapping() then Gamestate.keypressed(key) return end
+  if controls:isRemapping() then
+    Gamestate.keypressed(key)
+    return
+  end
   if key == "f5" then debugger:toggle() end
   if key == "f6" and debugger.on then debug.debug() end
   local action = controls:getAction(key)
   local state = Gamestate.currentState().name or ""
 
   if not action and state ~= "welcome" then return end
-  if Prompt.currentPrompt then
-    Prompt.currentPrompt:keypressed(action)
-  elseif Dialog.currentDialog then
-    Dialog.currentDialog:keypressed(action)
-  else
-    Gamestate.keypressed(action)
-  end
+  -- add input takeover for modals
+  Gamestate.keypressed(action)
 end
 
 function love.keyreleased(key, scancode)
@@ -249,37 +185,31 @@ function love.draw()
   camera:set()
   Gamestate.draw()
   fonts.set('arial')
-  if Dialog.currentDialog then
-    Dialog.currentDialog:draw()
-  end
-  if Prompt.currentPrompt then
-    Prompt.currentPrompt:draw()
-  end
   fonts.revert()
   camera:unset()
 
-  if paused then
-    love.graphics.setColor(75/255, 75/255, 75/255, 125/255)
-    love.graphics.rectangle('fill', 0, 0, love.graphics:getWidth(),
-    love.graphics:getHeight())
-    love.graphics.setColor(1, 1, 1, 1)
-  end
+  -- if paused then
+  --   love.graphics.setColor(75 / 255, 75 / 255, 75 / 255, 125 / 255)
+  --   love.graphics.rectangle('fill', 0, 0, love.graphics:getWidth(),
+  --     love.graphics:getHeight())
+  --   love.graphics.setColor(1, 1, 1, 1)
+  -- end
 
-  if debugger.on then debugger:draw() end
-  -- If the user has turned the FPS display on AND a screenshot is not being taken
-  if window.showfps and window.dressing_visible then
-    love.graphics.setColor( 1, 1, 1, 1 )
-    fonts.set('big')
-    love.graphics.print( love.timer.getFPS() .. ' FPS', love.graphics.getWidth() - 100, 5, 0, 1, 1 )
-    fonts.revert()
-  end
+  -- if debugger.on then debugger:draw() end
+  -- -- If the user has turned the FPS display on AND a screenshot is not being taken
+  -- if window.showfps and window.dressing_visible then
+  --   love.graphics.setColor(1, 1, 1, 1)
+  --   fonts.set('big')
+  --   love.graphics.print(love.timer.getFPS() .. ' FPS', love.graphics.getWidth() - 100, 5, 0, 1, 1)
+  --   fonts.revert()
+  -- end
 end
 
 -- Override the default screenshot functionality so we can disable the fps before taking it
 local captureScreenshot = love.graphics.captureScreenshot
-function love.graphics.captureScreenshot( callback )
+function love.graphics.captureScreenshot(callback)
   window.dressing_visible = false
   love.draw()
-  captureScreenshot( callback )
+  captureScreenshot(callback)
   window.dressing_visible = true
 end
