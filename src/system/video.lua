@@ -7,13 +7,15 @@ local video = {}
 local Video = {}
 
 function video.new()
+    local Rect = require 'system/drawables/rect'
     local self = setmetatable({
         prev_dt = 0,
         total_time = 0,
         frame = 0,
         current_frame_delta = 0,
-        desired_frame_time = 1000.0 / 60 / 1000,
-        frame_pacer = FramePacer.new(Rect:new(0, 0, 80, 80))
+        target_fps = 60,
+        desired_frame_time = 1.0 / 60,
+        frame_pacer = FramePacer.new({x = 0, y = 0, w = 80, h = 80})
     }, {
         __index = Video
     })
@@ -49,6 +51,18 @@ end
 function Video:drawMetrics()
     self.frame_pacer:draw()
     love.graphics.print(math.floor(1 / math.max(self.prev_dt, self.desired_frame_time)))
+end
+
+function Video:setTargetFPS(fps)
+    self.target_fps = fps
+    self.desired_frame_time = 1.0 / fps
+    if self.frame_pacer then
+        self.frame_pacer:setTargetFPS(fps)
+    end
+end
+
+function Video:getTargetFPS()
+    return self.target_fps
 end
 
 return video

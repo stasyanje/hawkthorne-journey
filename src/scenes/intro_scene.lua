@@ -40,9 +40,7 @@ function intro:update(dt)
     
     -- Update video system with new target FPS from slider
     local target_fps = self.fps_slider:getValue()
-    if self.video.frame_pacer then
-        self.video.frame_pacer:setTargetFPS(target_fps)
-    end
+    self.video:setTargetFPS(target_fps)
     
     local frame = self.video:update(dt)
 
@@ -134,13 +132,13 @@ function intro:keypressed(button, player)
 
     if button == 'd' then
         intro.player_circle.x = intro.player_circle.x + 10
-        intro.video.desired_frame_time = 1000.0 / 30 / 1000
+        intro.fps_slider:setValue(30)  -- Set slider to 30 FPS
         return true
     end
 
     if button == 'a' then
         intro.player_circle.x = intro.player_circle.x - 10
-        intro.video.desired_frame_time = 1000.0 / 120 / 1000
+        intro.fps_slider:setValue(120) -- Set slider to 120 FPS
         return true
     end
 

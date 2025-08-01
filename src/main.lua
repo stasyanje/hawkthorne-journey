@@ -20,7 +20,9 @@ end
 
 -- Update
 function love.update(dt)
-  dt = math.min(0.033333333, dt)
+  -- Clamp dt to prevent spiral of death, but allow for variable frame rates
+  -- Max dt of 0.1 seconds (10 FPS minimum) to prevent huge jumps
+  dt = math.min(0.1, dt)
 
   Gamestate.update(dt)
 end
