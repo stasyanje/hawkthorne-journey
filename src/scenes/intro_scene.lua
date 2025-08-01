@@ -70,6 +70,11 @@ function intro:draw()
     
     -- Draw FPS slider
     self.fps_slider:draw()
+    
+    -- Draw instructions
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(love.graphics.newFont(12))
+    love.graphics.print("Press SPACE to enter the Room Game", 10, window.height - 20)
 
     love.graphics.pop()
 end
@@ -139,6 +144,11 @@ function intro:keypressed(button, player)
     if button == 'a' then
         intro.player_circle.x = intro.player_circle.x - 10
         intro.fps_slider:setValue(120) -- Set slider to 120 FPS
+        return true
+    end
+    
+    if button == 'space' then
+        Gamestate.switch('scenes/room_scene')
         return true
     end
 

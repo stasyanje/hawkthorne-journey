@@ -37,9 +37,11 @@ function buttonpressed(key)
 end
 
 function love.keyreleased(key, scancode)
+  Gamestate.keyreleased(key, scancode)
 end
 
 function love.keypressed(key, scancode, isrepeat)
+  Gamestate.keypressed(key, scancode, isrepeat)
 end
 
 function love.gamepadreleased(joystick, key)
