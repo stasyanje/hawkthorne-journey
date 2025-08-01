@@ -2,14 +2,11 @@ local Gamestate = require 'vendor/gamestate'
 local window = require 'ui/window'
 local Circle = require 'system/drawables/circle'
 local Rect = require 'system/drawables/rect'
-local video = require 'src/system/video'
-local Slider = require 'ui/slider'
+local VideoSettings = require 'system/video_settings'
 
 local room = Gamestate.new()
 
 function room:init()
-    self.video = video.new()
-    
     -- Room dimensions
     self.room_width = window.width - 100
     self.room_height = window.height - 100
@@ -32,9 +29,6 @@ function room:init()
     
     -- Player movement
     self.player_speed = 200 -- pixels per second
-    
-    -- FPS slider
-    self.fps_slider = Slider.new(window.width - 220, 20, 200, 20, 5, 120, 60, "Target FPS")
     
     -- Input state
     self.keys = {}
@@ -100,12 +94,8 @@ function room:leave()
 end
 
 function room:update(dt)
-    -- Update slider and video system
-    self.fps_slider:update(dt)
-    local target_fps = self.fps_slider:getValue()
-    self.video:setTargetFPS(target_fps)
-    
-    self.video:update(dt)
+    -- Update shared video settings
+    VideoSettings:update(dt)
     
     -- Handle player movement
     self:updatePlayerMovement(dt)
@@ -195,8 +185,7 @@ function room:triggerDoor(door_name)
 end
 
 function room:draw()
-    -- Draw video metrics
-    self.video:drawMetrics()
+    VideoSettings:draw()
     
     love.graphics.push()
     love.graphics.setBackgroundColor(0.1, 0.1, 0.2, 1)
@@ -222,9 +211,7 @@ function room:draw()
     love.graphics.setFont(love.graphics.newFont(12))
     love.graphics.print("WASD/Arrow Keys: Move", 10, window.height - 40)
     love.graphics.print("Walk to doors to trigger events", 10, window.height - 20)
-    
-    -- Draw FPS slider
-    self.fps_slider:draw()
+    love.graphics.print("ESC: Return to intro", 10, window.height - 60)
     
     love.graphics.pop()
 end

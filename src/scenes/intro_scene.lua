@@ -3,8 +3,7 @@ local window = require 'ui/window'
 local Circle = require 'system/drawables/circle'
 local Rect = require 'system/drawables/rect'
 local Collider = require 'system/collider'
-local video = require 'src/system/video'
-local Slider = require 'ui/slider'
+local VideoSettings = require 'system/video_settings'
 
 local intro = Gamestate.new()
 
@@ -18,10 +17,6 @@ function intro:init()
     self.static_circle = Circle:new(100, 100, 20)
     self.player_circle = Circle:new(-1, -1, 10)
     self.collider = Collider:new(self.player_circle, self.floor)
-    self.video = video.new(love)
-    
-    -- Create FPS slider in top-right corner
-    self.fps_slider = Slider.new(window.width - 220, 20, 200, 20, 5, 120, 60, "Target FPS")
 
     self.drawables = {self.floor, self.static_circle, self.moving_circle, self.player_circle}
 end
@@ -35,14 +30,10 @@ function intro:leave()
 end
 
 function intro:update(dt)
-    -- Update slider
-    self.fps_slider:update(dt)
+    -- Update shared video settings
+    VideoSettings:update(dt)
     
-    -- Update video system with new target FPS from slider
-    local target_fps = self.fps_slider:getValue()
-    self.video:setTargetFPS(target_fps)
-    
-    local frame = self.video:update(dt)
+    local frame = VideoSettings:getVideoSystem().frame
 
     if frame == self.frame then
         return
@@ -54,7 +45,7 @@ function intro:update(dt)
 end
 
 function intro:draw()
-    self.video:drawMetrics()
+    VideoSettings:draw()
 
     love.graphics.push()
     love.graphics.setBackgroundColor(0, 0, 0, 1)
@@ -68,9 +59,6 @@ function intro:draw()
         drawable:draw()
     end
     
-    -- Draw FPS slider
-    self.fps_slider:draw()
-    
     -- Draw instructions
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(love.graphics.newFont(12))
@@ -82,7 +70,7 @@ end
 function intro:move()
     -- moving circle
     self.moving_circle.y = 0.5 * window.height
-    self.moving_circle.x = window.width * math.abs(math.sin(self.video:totalTime()) * 0.5 + 0.5)
+    self.moving_circle.x = window.width * math.abs(math.sin(VideoSettings:getVideoSystem():totalTime()) * 0.5 + 0.5)
 
     -- collision scale
     local collision = self.collider:collideCircles(self.moving_circle, self.static_circle)
@@ -137,13 +125,13 @@ function intro:keypressed(button, player)
 
     if button == 'd' then
         intro.player_circle.x = intro.player_circle.x + 10
-        intro.fps_slider:setValue(30)  -- Set slider to 30 FPS
+        VideoSettings:setTargetFPS(30)  -- Set to 30 FPS
         return true
     end
 
     if button == 'a' then
         intro.player_circle.x = intro.player_circle.x - 10
-        intro.fps_slider:setValue(120) -- Set slider to 120 FPS
+        VideoSettings:setTargetFPS(120) -- Set to 120 FPS
         return true
     end
     
