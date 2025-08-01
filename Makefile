@@ -1,18 +1,13 @@
-.PHONY: clean contributors validate run maps lint build/hawkthorne.love love love.js
-
 UNAME := $(shell uname)
-TILEMAPS := $(patsubst %.tmx,%.lua,$(wildcard src/maps/*.tmx))
 LOVE_DOWNLOAD_URL = https://github.com/love2d/love/releases/download
 LOVE_VERSION = 11.5
-MACOS_APP=build/Journey\ to\ the\ Center\ of\ Hawkthorne.app
+MACOS_APP=build/Playground.app
 
 ifeq ($(UNAME), Darwin)
-	TMXTAR = tmx2lua.osx.zip
 	LOVE = bin/love.app/Contents/MacOS/love
 	# macOS cannot create a Linux AppImage
 	BINARIES = build/hawkthorne-macos.zip build/hawkthorne-win32.zip build/hawkthorne-win64.zip
 else
-	TMXTAR = tmx2lua.linux.tar.gz
 	LOVE = bin/love.AppImage
 	BINARIES = build/hawkthorne-macos.zip build/hawkthorne-win32.zip build/hawkthorne-win64.zip build/hawkthorne-linux.AppImage
 endif
@@ -23,47 +18,22 @@ else
 	WGET = wget -q --no-check-certificate
 endif
 
-maps: $(TILEMAPS)
+love: build/playground.love
 
-love: build/hawkthorne.love
-
-love.js: build/hawkthorne.love
+love.js: build/playground.love
 	mkdir -p build/web
 	npm install
-	npx love.js -m 77594624 -c build/hawkthorne.love build/web
+	npx love.js -m 77594624 -c build/playground.love build/web
 
-build/hawkthorne.love: $(TILEMAPS) src/*
+build/playground.love: src/*
 	mkdir -p build
-	rm -f build/hawkthorne.love
-	cd src && zip --symlinks -q -r ../build/hawkthorne.love . \
+	rm -f build/playground.love
+	cd src && zip --symlinks -q -r ../build/playground.love . \
 		-x ".*" \
 		-x "*.DS_Store" \
-		-x "psds/*" \
-		-x "test/*" \
-		-x "*.tmx" \
-		-x "maps/test-level.lua" \
-		-x "*/full_soundtrack.ogg" \
-		-x "*.bak"
 
-run: $(TILEMAPS) $(LOVE)
+run: $(LOVE)
 	$(LOVE) src
-
-src/maps/%.lua: src/maps/%.tmx bin/tmx2lua
-	bin/tmx2lua $<
-
-# tmx2lua requires golang to be installed.
-# If you need to install it on macOS:
-# brew update && brew install golang
-bin/tmx2lua:
-	mkdir -p bin
-	$(WGET) https://github.com/hawkthorne/tmx2lua/releases/download/v1.0.1/$(TMXTAR)
-ifeq ($(UNAME), Darwin)
-	unzip -q $(TMXTAR)
-else
-	tar -xzvf $(TMXTAR)
-endif
-	rm -f $(TMXTAR) ._tmx2lua
-	mv tmx2lua bin
 
 bin/win32/love.exe:
 	$(WGET) $(LOVE_DOWNLOAD_URL)/$(LOVE_VERSION)/love-$(LOVE_VERSION)-win32.zip
@@ -146,9 +116,6 @@ venv:
 
 contributors: venv
 	venv/bin/python scripts/credits.py > src/credits.lua
-
-test: $(LOVE) maps
-	$(LOVE) src --test
 
 validate: venv lint
 	venv/bin/python scripts/validate.py src
