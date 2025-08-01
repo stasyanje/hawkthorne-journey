@@ -1,22 +1,8 @@
 -- Dependencies
-local app = require 'app'
-
-local tween = require 'vendor/tween'
 local Gamestate = require 'vendor/gamestate'
-local sound = require 'vendor/TEsound'
-local timer = require 'vendor/timer'
-local cli = require 'core/cli'
+local cli = require 'system/cli'
 
-local debugger = require 'debugger'
-local camera = require 'camera'
-local fonts = require 'fonts'
-local window = require 'window'
-local controls = require('inputcontroller').get()
-local cheat = require 'cheat'
-
--- State
-local testing = false
-local paused = false
+local window = require 'ui/window'
 
 -- Load
 function love.load(arg)
@@ -28,181 +14,53 @@ function love.load(arg)
 
   local args = cli.initialize(arg)
 
-  if args["test"] then
-    local lovetest = require 'test/lovetest'
-    testing = true
-    lovetest.run()
-    return
-  end
-
-  if args["wait"] then
-    -- wait to for other game to quit
-    love.timer.sleep(3)
-  end
-
-  if args["vol-mute"] == 'all' then
-    sound.disabled = true
-  elseif args["vol-mute"] == 'music' then
-    sound.volume('music', 0)
-  elseif args["vol-mute"] == 'sfx' then
-    sound.volume('sfx', 0)
-  end
-
-  if args["d"] then
-    debugger.set(true, false)
-  end
-
-  if args["b"] then
-    debugger.set(true, true)
-  end
-
-  if args["locale"] ~= "" then
-    app.i18n:setLocale(args.locale)
-  end
-
-  local argcheats = false
-  local cheats = {}
-  if args["cheat"] ~= "" then
-    argcheats = true
-
-    if string.find(args["cheat"], ",") then
-      local from                 = 1
-      local delim_from, delim_to = string.find(args["cheat"], ",", from)
-      while delim_from do
-        table.insert(cheats, string.sub(args["cheat"], from, delim_from - 1))
-        from                 = delim_to + 1
-        delim_from, delim_to = string.find(args["cheat"], ",", from)
-      end
-      table.insert(cheats, string.sub(args["cheat"], from))
-    else
-      if args["cheat"] == "all" then
-        cheats = { 'jump_high', 'super_speed', 'god', 'slide_attack' }
-      else
-        cheats = { args["cheat"] }
-      end
-    end
-  end
-
   love.graphics.setDefaultFilter('nearest', 'nearest')
   Gamestate.switch('update', door, position)
-
-  if argcheats then
-    for k, arg in ipairs(cheats) do
-      cheat:on(arg)
-    end
-  end
 end
 
 -- Update
 function love.update(dt)
-  if paused or testing then return end
-  if debugger.on then debugger:update(dt) end
   dt = math.min(0.033333333, dt)
 
   Gamestate.update(dt)
-  tween.update(dt > 0 and dt or 0.001)
-  timer.update(dt)
-  sound.cleanup()
-
-  if debugger.on then
-    collectgarbage("collect")
-  end
 end
 
 -- buttons
 function buttonreleased(key)
-  if testing then return end
-  local action = controls:getAction(key)
-  if action then Gamestate.keyreleased(action) end
-
-  if not action then return end
   Gamestate.keyreleased(action)
 end
 
 function buttonpressed(key)
-  if testing then return end
-  if controls:isRemapping() then
-    Gamestate.keypressed(key)
-    return
-  end
-  if key == "f5" then debugger:toggle() end
-  if key == "f6" and debugger.on then debug.debug() end
-  local action = controls:getAction(key)
-  local state = Gamestate.currentState().name or ""
-
-  if not action and state ~= "welcome" then return end
-  -- add input takeover for modals
   Gamestate.keypressed(action)
 end
 
 function love.keyreleased(key, scancode)
-  buttonreleased(key)
 end
 
 function love.keypressed(key, scancode, isrepeat)
-  controls:switch()
-  buttonpressed(key)
 end
 
 function love.gamepadreleased(joystick, key)
-  buttonreleased(key)
 end
 
 function love.gamepadpressed(joystick, key)
-  controls:switch(joystick)
-  buttonpressed(key)
 end
 
 function love.joystickremoved(joystick)
-  controls:switch()
 end
 
 function love.joystickreleased(joystick, key)
-  if joystick:isGamepad() then return end
-  buttonreleased(tostring(key))
 end
 
 function love.joystickpressed(joystick, key)
-  if joystick:isGamepad() then return end
-  controls:switch(joystick)
-  buttonpressed(tostring(key))
 end
 
 function love.joystickaxis(joystick, axis, value)
-  if joystick:isGamepad() then return end
-  axisDir1, axisDir2, _ = joystick:getAxes()
-  controls:switch(joystick)
-  if axisDir1 < 0 then buttonpressed('dpleft') end
-  if axisDir1 > 0 then buttonpressed('dpright') end
-  if axisDir2 < 0 then buttonpressed('dpup') end
-  if axisDir2 > 0 then buttonpressed('dpdown') end
 end
 
 -- Draw
 function love.draw()
-  if testing then return end
-
-  camera:set()
   Gamestate.draw()
-  fonts.set('arial')
-  fonts.revert()
-  camera:unset()
-
-  -- if paused then
-  --   love.graphics.setColor(75 / 255, 75 / 255, 75 / 255, 125 / 255)
-  --   love.graphics.rectangle('fill', 0, 0, love.graphics:getWidth(),
-  --     love.graphics:getHeight())
-  --   love.graphics.setColor(1, 1, 1, 1)
-  -- end
-
-  -- if debugger.on then debugger:draw() end
-  -- -- If the user has turned the FPS display on AND a screenshot is not being taken
-  -- if window.showfps and window.dressing_visible then
-  --   love.graphics.setColor(1, 1, 1, 1)
-  --   fonts.set('big')
-  --   love.graphics.print(love.timer.getFPS() .. ' FPS', love.graphics.getWidth() - 100, 5, 0, 1, 1)
-  --   fonts.revert()
-  -- end
 end
 
 -- Override the default screenshot functionality so we can disable the fps before taking it

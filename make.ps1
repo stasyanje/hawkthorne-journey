@@ -49,41 +49,11 @@ if($check -eq $false){
   $destination.Copyhere($zip_file.items())
 }
 
-$tmx = "bin\tmx2lua.exe"
-$check = Test-Path $tmx
-
-if($check -eq $false){
-
-  $filename = (Get-Location).Path + "\bin\tmx2lua.windows32.zip"
-
-  $check = Test-Path $filename
-
-  if($check -eq $false){
-    Write-Host "Downloading tmx2lua..."
-    $url = "http://hawkthorne.github.io/tmx2lua/downloads/tmx2lua.windows32.zip"
-    try {
-      $webclient.DownloadFile($url,$filename)
-    } catch {
-      Write-Error "Failed to download tmx2lua..."
-      Write-Error $_
-      Exit
-    }
-  }
-
-  $shell_app=new-object -com shell.application
-  $zip_file = $shell_app.namespace($filename)
-  $destination = $shell_app.namespace((Get-Location).Path + "\bin")
-  $destination.Copyhere($zip_file.items())
-}
-
 if($args[0] -eq "run"){
-  Write-Host "Running Journey to the Center of Hawkthorne..."
+  Write-Host "Running Playground..."
   if($args.Length -ne 1){
     .\bin\love-11.5-win64\love.exe src $args[1..($args.Length-1)]
   }else{
     .\bin\love-11.5-win64\love.exe src
   }
-}elseif($args[0] -eq "test"){
-  Write-Host "Testing Journey to the Center of Hawkthorne..."
-  .\bin\love-11.5-win64\love.exe src --test --console
 }
