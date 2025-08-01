@@ -4,6 +4,7 @@ local Circle = require 'system/drawables/circle'
 local Rect = require 'system/drawables/rect'
 local Collider = require 'system/collider'
 local video = require 'src/system/video'
+local Slider = require 'ui/slider'
 
 local intro = Gamestate.new()
 
@@ -18,6 +19,9 @@ function intro:init()
     self.player_circle = Circle:new(-1, -1, 10)
     self.collider = Collider:new(self.player_circle, self.floor)
     self.video = video.new(love)
+    
+    -- Create FPS slider in top-right corner
+    self.fps_slider = Slider.new(window.width - 220, 20, 200, 20, 5, 120, 60, "Target FPS")
 
     self.drawables = {self.floor, self.static_circle, self.moving_circle, self.player_circle}
 end
@@ -31,6 +35,15 @@ function intro:leave()
 end
 
 function intro:update(dt)
+    -- Update slider
+    self.fps_slider:update(dt)
+    
+    -- Update video system with new target FPS from slider
+    local target_fps = self.fps_slider:getValue()
+    if self.video.frame_pacer then
+        self.video.frame_pacer:setTargetFPS(target_fps)
+    end
+    
     local frame = self.video:update(dt)
 
     if frame == self.frame then
@@ -56,6 +69,9 @@ function intro:draw()
     for _, drawable in ipairs(self.drawables) do
         drawable:draw()
     end
+    
+    -- Draw FPS slider
+    self.fps_slider:draw()
 
     love.graphics.pop()
 end

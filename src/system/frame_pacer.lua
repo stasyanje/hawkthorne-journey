@@ -49,6 +49,15 @@ FramePacer = {
         love.graphics.rectangle('fill', self.rect.x, self.rect.y, self.rect.w, self.rect.h)
         love.graphics.setShader()
         love.graphics.pop()
+    end,
+    
+    setTargetFPS = function(self, fps)
+        self.target_fps = fps
+        self.shader:send('target_frame_time', 1.0 / self.target_fps)
+    end,
+    
+    getTargetFPS = function(self)
+        return self.target_fps
     end
 }
 return FramePacer
