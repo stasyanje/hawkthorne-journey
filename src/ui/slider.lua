@@ -1,13 +1,10 @@
 local Slider = {}
 Slider.__index = Slider
 
-function Slider.new(x, y, width, height, min_value, max_value, initial_value, label)
+function Slider.new(rect, min_value, max_value, initial_value, label)
     local self = setmetatable({}, Slider)
     
-    self.x = x
-    self.y = y
-    self.width = width
-    self.height = height
+    self.rect = rect
     self.min_value = min_value or 0
     self.max_value = max_value or 100
     self.value = initial_value or min_value
@@ -25,9 +22,11 @@ function Slider:update(dt)
     local mouse_pressed = love.mouse.isDown(1)
     
     -- Check if mouse is over the slider
-    local over_slider = mouse_x >= self.x and mouse_x <= self.x + self.width and
-                       mouse_y >= self.y and mouse_y <= self.y + self.height
-    
+    local over_slider = mouse_x >= self.rect.x
+        and mouse_x <= self.rect.x + self.rect.w
+        and mouse_y >= self.rect.y
+        and mouse_y <= self.rect.y + self.rect.h
+
     if mouse_pressed and over_slider and not self.dragging then
         self.dragging = true
     elseif not mouse_pressed then
@@ -36,27 +35,27 @@ function Slider:update(dt)
     
     if self.dragging then
         -- Calculate new value based on mouse position
-        local relative_x = mouse_x - self.x
-        local normalized = math.max(0, math.min(1, relative_x / self.width))
+        local relative_x = mouse_x - self.rect.x
+        local normalized = math.max(0, math.min(1, relative_x / self.rect.w))
         self.value = self.min_value + normalized * (self.max_value - self.min_value)
     end
 end
 
 function Slider:draw()
-    local track_y = self.y + (self.height - self.track_height) / 2
+    local track_y = self.rect.y + (self.rect.h - self.track_height) / 2
     
     -- Draw track background
     love.graphics.setColor(0.3, 0.3, 0.3, 0.8)
-    love.graphics.rectangle("fill", self.x, track_y, self.width, self.track_height)
+    love.graphics.rectangle("fill", self.rect.x, track_y, self.rect.w, self.track_height)
     
     -- Draw track fill
-    local fill_width = ((self.value - self.min_value) / (self.max_value - self.min_value)) * self.width
+    local fill_width = ((self.value - self.min_value) / (self.max_value - self.min_value)) * self.rect.w
     love.graphics.setColor(0.2, 0.7, 0.9, 0.8)
-    love.graphics.rectangle("fill", self.x, track_y, fill_width, self.track_height)
+    love.graphics.rectangle("fill", self.rect.x, track_y, fill_width, self.track_height)
     
     -- Draw knob
-    local knob_x = self.x + fill_width - self.knob_width / 2
-    local knob_y = self.y + (self.height - self.knob_width) / 2
+    local knob_x = self.rect.x + fill_width - self.knob_width / 2
+    local knob_y = self.rect.y + (self.rect.h - self.knob_width) / 2
     
     if self.dragging then
         love.graphics.setColor(1, 1, 1, 1)
@@ -69,7 +68,7 @@ function Slider:draw()
     love.graphics.setColor(1, 1, 1, 1)
     local display_value = math.floor(self.value + 0.5) -- Round to nearest integer
     local text = string.format("%s: %d", self.label, display_value)
-    love.graphics.print(text, self.x, self.y - 20)
+    love.graphics.print(text, self.rect.x, self.rect.y - 20)
     
     -- Reset color
     love.graphics.setColor(1, 1, 1, 1)

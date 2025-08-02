@@ -1,7 +1,7 @@
 local Gamestate = require 'vendor/gamestate'
 local window = require 'ui/window'
-local Circle = require 'system/drawables/circle'
-local Rect = require 'system/drawables/rect'
+local MakeCircle = require 'system/drawables/make_circle'
+local MakeRect = require 'system/drawables/make_rect'
 local Collider = require 'system/collider'
 
 local intro = Gamestate.new()
@@ -11,13 +11,11 @@ function intro:init()
     self.mouse_frame = 0
 
     self.pressLMB = nil
-    self.floor = Rect:new(0, 0, 0, 0)
-    self.moving_circle = Circle:new(-1, -1, 20)
-    self.static_circle = Circle:new(100, 100, 20)
-    self.player_circle = Circle:new(-1, -1, 10)
+    self.floor = MakeRect(0, 0, 0, 0)
+    self.moving_circle = MakeCircle(-1, -1, 20)
+    self.static_circle = MakeCircle(100, 100, 20)
+    self.player_circle = MakeCircle(-1, -1, 10)
     self.collider = Collider:new(self.player_circle, self.floor)
-
-    self.drawables = {self.floor, self.static_circle, self.moving_circle, self.player_circle}
 end
 
 function intro:enter()
@@ -40,10 +38,11 @@ function intro:draw()
 
     love.graphics.setFont(love.graphics.newFont(8))
 
-    for _, drawable in ipairs(self.drawables) do
-        drawable:draw()
-    end
-    
+    love.graphics.circle('fill', self.static_circle.x, self.static_circle.y, self.static_circle.r)
+    love.graphics.circle('fill', self.moving_circle.x, self.moving_circle.y, self.moving_circle.r)
+    love.graphics.circle('fill', self.player_circle.x, self.player_circle.y, self.player_circle.r)
+    love.graphics.rectangle('fill', self.floor.x, self.floor.y, self.floor.w, self.floor.h)
+
     -- Draw instructions
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(love.graphics.newFont(12))
@@ -73,7 +72,7 @@ end
 
 function love.mousepressed(x, y, button)
     if button == 1 then
-        local click = Circle:new(x * window.scale, y * window.scale, 1)
+        local click = MakeCircle(x * window.scale, y * window.scale, 1)
 
         if intro.collider:collideCircles(intro.static_circle, click) > 0 then
             intro.pressLMB = click

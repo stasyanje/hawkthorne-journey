@@ -1,7 +1,7 @@
 local Gamestate = require 'vendor/gamestate'
 local window = require 'ui/window'
-local Circle = require 'system/drawables/circle'
-local Rect = require 'system/drawables/rect'
+local MakeCircle = require 'system/drawables/make_circle'
+local MakeRect = require 'system/drawables/make_rect'
 
 local room = Gamestate.new()
 
@@ -20,15 +20,11 @@ function room:init()
     self:createWalls()
     
     -- Create player in center
-    self.player = Circle:new(
-        window.width / 2,
-        window.height / 2,
-        15
-    )
-    
+    self.player = MakeCircle(window.width / 2, window.height / 2, 15)
+
     -- Player movement
-    self.player_speed = 200 -- pixels per second
-    
+    self.player_speed = 1 -- 1px / 1ms
+
     -- Input state
     self.keys = {}
 end
@@ -42,8 +38,18 @@ function room:createWalls()
     local door_offset_v = (self.room_height - self.door_width) / 2
     
     -- Top wall (with door)
-    table.insert(self.walls, Rect:new(self.room_x, self.room_y, door_offset, self.wall_thickness))
-    table.insert(self.walls, Rect:new(self.room_x + door_offset + self.door_width, self.room_y, door_offset, self.wall_thickness))
+    table.insert(self.walls, MakeRect(
+        self.room_x,
+        self.room_y,
+        door_offset,
+        self.wall_thickness
+    ))
+    table.insert(self.walls, MakeRect(
+        self.room_x + door_offset + self.door_width,
+        self.room_y,
+        door_offset,
+        self.wall_thickness
+    ))
     self.doors.top = {
         x = self.room_x + door_offset,
         y = self.room_y,
@@ -53,8 +59,18 @@ function room:createWalls()
     
     -- Bottom wall (with door)
     local bottom_y = self.room_y + self.room_height - self.wall_thickness
-    table.insert(self.walls, Rect:new(self.room_x, bottom_y, door_offset, self.wall_thickness))
-    table.insert(self.walls, Rect:new(self.room_x + door_offset + self.door_width, bottom_y, door_offset, self.wall_thickness))
+    table.insert(self.walls, MakeRect(
+        self.room_x,
+        bottom_y,
+        door_offset,
+        self.wall_thickness
+    ))
+    table.insert(self.walls, MakeRect(
+        self.room_x + door_offset + self.door_width,
+        bottom_y,
+        door_offset,
+        self.wall_thickness
+    ))
     self.doors.bottom = {
         x = self.room_x + door_offset,
         y = bottom_y,
@@ -63,8 +79,18 @@ function room:createWalls()
     }
     
     -- Left wall (with door)
-    table.insert(self.walls, Rect:new(self.room_x, self.room_y, self.wall_thickness, door_offset_v))
-    table.insert(self.walls, Rect:new(self.room_x, self.room_y + door_offset_v + self.door_width, self.wall_thickness, door_offset_v))
+    table.insert(self.walls, MakeRect(
+        self.room_x,
+        self.room_y,
+        self.wall_thickness,
+        door_offset_v
+    ))
+    table.insert(self.walls, MakeRect(
+        self.room_x,
+        self.room_y + door_offset_v + self.door_width,
+        self.wall_thickness,
+        door_offset_v
+    ))
     self.doors.left = {
         x = self.room_x,
         y = self.room_y + door_offset_v,
@@ -74,8 +100,18 @@ function room:createWalls()
     
     -- Right wall (with door)
     local right_x = self.room_x + self.room_width - self.wall_thickness
-    table.insert(self.walls, Rect:new(right_x, self.room_y, self.wall_thickness, door_offset_v))
-    table.insert(self.walls, Rect:new(right_x, self.room_y + door_offset_v + self.door_width, self.wall_thickness, door_offset_v))
+    table.insert(self.walls, MakeRect(
+        right_x,
+        self.room_y,
+        self.wall_thickness,
+        door_offset_v
+    ))
+    table.insert(self.walls, MakeRect(
+        right_x,
+        self.room_y + door_offset_v + self.door_width,
+        self.wall_thickness,
+        door_offset_v
+    ))
     self.doors.right = {
         x = right_x,
         y = self.room_y + door_offset_v,
@@ -124,9 +160,9 @@ function room:updatePlayerMovement(dt)
     end
     
     -- Apply movement
-    local new_x = self.player.x + dx * self.player_speed * dt
-    local new_y = self.player.y + dy * self.player_speed * dt
-    
+    local one_ms = dt / 0.016666
+    local new_x = self.player.x + dx * self.player_speed * one_ms
+    local new_y = self.player.y + dy * self.player_speed * one_ms
     -- Check wall collisions
     if not self:checkWallCollision(new_x, self.player.y) then
         self.player.x = new_x
@@ -187,7 +223,7 @@ function room:draw()
     -- Draw walls
     love.graphics.setColor(0.8, 0.8, 0.8, 1)
     for _, wall in ipairs(self.walls) do
-        wall:draw()
+        love.graphics.rectangle('fill', wall.x, wall.y, wall.w, wall.h)
     end
     
     -- Draw doors (different color)
@@ -198,8 +234,7 @@ function room:draw()
     
     -- Draw player
     love.graphics.setColor(1, 0.5, 0.2, 1) -- Orange player
-    self.player:draw()
-    
+    love.graphics.circle('fill', self.player.x, self.player.y, self.player.r)
     -- Draw instructions
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setFont(love.graphics.newFont(12))

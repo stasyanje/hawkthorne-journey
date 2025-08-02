@@ -1,12 +1,15 @@
 local window = require "ui/window"
+
 local Collider = {}
 Collider.__index = Collider
 
-function Collider:new(playerCircle, floor)
-    return setmetatable({
-        player_circle = playerCircle,
-        floor = floor
-    }, Collider)
+function Collider:new(player_circle, floor)
+    local self = setmetatable({}, Collider)
+
+    self.player_circle = player_circle
+    self.floor = floor
+
+    return self
 end
 
 local function distance(x1, y1, x2, y2)
