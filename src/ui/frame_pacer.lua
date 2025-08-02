@@ -4,9 +4,7 @@ FramePacer.__index = FramePacer
 function FramePacer.new(rect)
     local self = setmetatable({}, FramePacer)
 
-    self.frame_times = {}
-    self.max_samples = 60 -- Keep 60 frame samples for display
-    self.target_fps = 60 -- Target 60 FPS (16.67ms per frame)
+    self.frame_times = table.repeating(0, 60)
     self.rect = rect
     self.shader = love.graphics.newShader('resources//shaders//frame_pacer.frag')
 
@@ -14,34 +12,23 @@ function FramePacer.new(rect)
         self.shader:send('size', {self.rect.w, self.rect.h})
     end
 
-    if self.shader:hasUniform('target_frame_time') then
-        self.shader:send('target_frame_time', 1.0 / self.target_fps)
-    end
-
     return self
 end
 
+function table.repeating(value, times) 
+    local table = {}
+    for i = 1, times do 
+        table[i] = value
+    end
+    return table
+end
+
 function FramePacer:update(dt)
-    -- Store the current frame time
     table.insert(self.frame_times, dt)
-
-    -- Keep only the last max_samples frames
-    if #self.frame_times > self.max_samples then
-        table.remove(self.frame_times, 1)
-    end
-
-    -- Pad array to max_samples with zeros if needed
-    local padded_times = {}
-    for i = 1, self.max_samples do
-        padded_times[i] = self.frame_times[i] or 0
-    end
+    table.remove(self.frame_times, 1)
 
     if self.shader:hasUniform('frame_times') then
-        self.shader:send('frame_times', unpack(padded_times))
-    end
-
-    if self.shader:hasUniform('sample_count') then
-        self.shader:send('sample_count', #self.frame_times)
+        self.shader:send('frame_times', unpack(self.frame_times))
     end
 end
 
@@ -54,8 +41,7 @@ function FramePacer:draw()
 end
 
 function FramePacer:setTargetFPS(fps)
-    self.target_fps = fps
-    self.shader:send('target_frame_time', 1.0 / self.target_fps)
+    self.shader:send('target_frame_time', 1.0 / fps)
 end
 
 return FramePacer

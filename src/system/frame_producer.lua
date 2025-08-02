@@ -10,7 +10,6 @@ local FrameProducer = {
     fps_slider = nil,
     frame_pacer = nil,
     target_fps = 60,
-    current_frame = 0,
     initialized = false
 }
 
@@ -18,26 +17,20 @@ function FrameProducer:initialize()
     if self.initialized then
         return
     end
+    self.initialized = true
 
     -- Create shared video system
     self.video_system = video.new()
-
-    -- Create shared FPS slider
-    self.fps_slider = Slider.new(MakeRect(window.width - 220, 20, 200, 20), 1, 120, self.target_fps, "Target FPS")
+    self.fps_slider = Slider.new(MakeRect(window.width - 220, 20, 200, 20), 5, 240, self.target_fps, "Target FPS")
     self.frame_pacer = FramePacer.new(MakeRect(0, 0, 80, 80))
 
     -- Set initial target FPS
-    self.video_system:setTargetFPS(self.target_fps)
-
-    self.initialized = true
+    self:setTargetFPS(self.target_fps)
 end
 
 function FrameProducer:update(dt)
     self:initialize()
 
-    -- dt = math.min(0.1, dt)
-
-    -- Update slider
     self.fps_slider:update(dt)
 
     -- Check if FPS changed significantly (avoid micro-updates)
@@ -46,12 +39,13 @@ function FrameProducer:update(dt)
         self:setTargetFPS(new_fps)
     end
 
-    local delta = self.video_system:update(dt)
+    local current_dt = self.video_system:update(dt)
 
-    self.current_frame = self.current_frame + 1
-    self.frame_pacer:update(dt)
+    if current_dt then
+        self.frame_pacer:update(current_dt) 
+    end
 
-    return delta
+    return current_dt
 end
 
 function FrameProducer:draw()

@@ -210,8 +210,6 @@ function room:checkDoorInteractions()
 end
 
 function room:triggerDoor(door_name)
-    print("Player approached " .. door_name .. " door!")
-    -- Reset player position to center
     self.player.x = window.width / 2
     self.player.y = window.height / 2
 end
